@@ -5,6 +5,8 @@ import sqlite3
 from datetime import datetime, timezone
 import logging
 import time
+import httpx
+import base64
 
 
 
@@ -21,6 +23,7 @@ from langchain_core.messages import ToolMessage
 
 from schemas.tool import NavigateToSectionInput,SessionId
 from schemas.tool import SendCvEmailInput,SendCvEmailResult,SendCvEmailConfirmation
+from schemas.tool import RepoSummary,RepoDetails
 
 # RAG on resume Start --------------------------------------------------------
 
@@ -230,7 +233,14 @@ def send_cv_email(
 
 
     ) -> dict:
-    """"""
+    """
+    Email Michael's CV/resume as a PDF to the given address.
+
+    This tool pauses execution for an explicit human confirmation before
+    anything is actually sent — call it as soon as you have a valid email
+    address, and let the interrupt handle the "are you sure" step rather
+    than trying to confirm in conversation first.
+    """
     thread_id = config["configurable"].get("thread_id", "unknown")
     emails_sent = state.get("emails_sent_this_session", 0)
 
@@ -320,3 +330,117 @@ def send_cv_email(
         "messages": [ToolMessage(content=result.model_dump_json(), tool_call_id=tool_call_id)],
     })
 # send_cv_email tool End --------------------------------------------------------
+
+# get_github_repos / get_repo_details Start --------------------------------
+GITHUB_USERNAME = "NMichaelg"
+GITHUB_TOKEN = os.environ["GITHUB_PAT"]
+CACHE_TTL_SECONDS = 60 * 60  # 1 hour
+
+_repos_cache: dict = {"data" : None, "timestamp": 0}
+_repo_details_cache: dict[str,dict] = {}
+
+GITHUB_HEADER = {
+    "Accept": "application/vnd.github+json",
+    "Authorization": f"Bearer {GITHUB_TOKEN}",
+    "X-GitHub-Api-Version": "2022-11-28",
+}
+
+@tool
+def get_github_repos() -> list[RepoSummary]:
+    """
+    Get the list of Michael's public GitHub repositories, including
+    name, description, language, star count, and topics. Use this when
+    the user asks what projects Michael has worked on.
+    """
+    current_time = time.time()
+
+    # If the cache is still valid, return the cached data
+    if _repos_cache["data"] is not None \
+        and (current_time - _repos_cache["timestamp"]) < CACHE_TTL_SECONDS:
+
+        return _repos_cache["data"]
+    
+    # If the cache is expired or empty, fetch fresh data from GitHub
+
+    url = f"https://api.github.com/users/{GITHUB_USERNAME}/repos"
+    response = httpx.get(
+        url, 
+        headers=GITHUB_HEADER,
+        params={"sort": "updated","per_page": 100},
+        timeout=10
+    )
+    response.raise_for_status()
+    repos_data = response.json()
+
+    summaries = [
+        RepoSummary(
+            name=r["name"],
+            description=r.get("description"),
+            language=r.get("language"),
+            stars=r["stargazers_count"],
+            url=r["html_url"],
+            topics=r.get("topics", []),
+            updated_at=r["updated_at"],
+        )
+        for r in repos_data
+        if not r.get("fork")  # optional: skip forks, keep it curated
+    ]
+
+    _repos_cache["data"] = summaries
+    _repos_cache["timestamp"] = current_time
+
+    return summaries
+
+@tool
+def get_repo_details(repo_name: str) -> RepoDetails | dict:
+    """
+    Get detailed info about one of Michael's GitHub repos, including
+    language breakdown and a README excerpt. Pass just the repo name
+    (e.g. 'portfolio-website'), not the full owner/repo path.
+    """
+    current_time = time.time()
+    cached = _repo_details_cache.get(repo_name)
+
+    # If the cache is still valid and contains the requested repo, return the cached data
+    if cached and (current_time - cached["timestamp"]) < CACHE_TTL_SECONDS:
+        return cached["data"]
+
+    # If the cache is expired or empty, fetch fresh data from GitHub
+    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}"
+    response = httpx.get(url, headers=GITHUB_HEADER, timeout=10)
+
+    if response.status_code == 404:
+        existing = get_github_repos.invoke({})
+        return {
+            "error": "not_found",
+            "message": f"No repo named '{repo_name}' found.",
+            "available_repos": [r.name for r in existing],
+        }
+    response.raise_for_status()
+    repo_data = response.json()
+
+    langs_resp = httpx.get(f"{url}/languages", headers=GITHUB_HEADER, timeout=10.0)
+    languages_breakdown = langs_resp.json() if langs_resp.status_code == 200 else {}
+
+    readme_excerpt = ""
+    readme_resp = httpx.get(f"{url}/readme", headers=GITHUB_HEADER, timeout=10.0)
+
+    if readme_resp.status_code == 200:
+        decoded = base64.b64decode(readme_resp.json()["content"]).decode("utf-8", errors="ignore")
+        readme_excerpt = decoded[:1500]
+
+    details = RepoDetails(
+        name=repo_data["name"],
+        description=repo_data.get("description"),
+        language=repo_data.get("language"),
+        languages_breakdown=languages_breakdown,
+        stars=repo_data["stargazers_count"],
+        url=repo_data["html_url"],
+        topics=repo_data.get("topics", []),
+        readme_excerpt=readme_excerpt,
+        updated_at=repo_data["updated_at"],
+    )
+    _repo_details_cache[repo_name] = {"data": details, "timestamp": current_time}
+    return details
+
+# get_github_repos / get_repo_details END --------------------------------

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field,EmailStr
-from typing import Literal
+from typing import Literal, Optional
 
 SessionId = Literal["hero", "experience", "tech-stack", "education", "contact"]
 
@@ -29,3 +29,23 @@ class SendCvEmailResult(BaseModel):
     status: Literal["sent", "failed_will_retry_log", "cancelled"]    
     recipient_email: EmailStr
     message: str # human-readable, e.g. "I will contact you soon as long as this email is valid"    
+
+class RepoSummary(BaseModel):
+    name: str
+    description: Optional[str]
+    language: Optional[str]
+    stars: int
+    url: str
+    topics: list[str]
+    updated_at: str
+
+class RepoDetails(BaseModel):
+    name: str
+    description: Optional[str]
+    language: Optional[str]
+    languages_breakdown: dict[str, int]
+    stars: int
+    url: str
+    topics: list[str]
+    readme_excerpt: str
+    updated_at: str
