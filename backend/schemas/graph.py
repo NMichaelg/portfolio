@@ -17,15 +17,11 @@ class ChatState(TypedDict):
     Fields are intentionally minimal — anything that doesn't need to persist
     across turns or influence routing/tools shouldn't live here.
     """
-
-    # Full conversation history. `add_messages` is a reducer: nodes return
-    # partial updates like {"messages": [new_msg]} and LangGraph appends
-    # (or replaces-by-id, for edits) rather than you managing the list by hand.
     messages: Annotated[list[BaseMessage], add_messages]
 
     # Set by the router node every turn. No default/reducer needed since
     # router always overwrites it — there's no "sticky" agent state to merge.
-    route: Literal["qa", "deep_dive"] | None
+    route: Literal["chat", "qa", "deep_dive"] | None
 
     # Session-scoped counter for send_cv_email's rate limit (max 5/session).
     # Plain int, no custom reducer — nodes that update it (only send_cv_email,
