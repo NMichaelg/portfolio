@@ -1,6 +1,6 @@
 import os
 
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 LLM_API_KEY = os.environ["LLM_API_KEY"]
 LLM_BASE_URL = os.envron["LLM_BASE_URL"]

@@ -11,6 +11,9 @@ from typing_extensions import TypedDict
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
+class RouteOutput(TypedDict):
+    route: Literal["qa", "deep_dive"]
+
 
 class ChatState(TypedDict):
     """
@@ -21,7 +24,7 @@ class ChatState(TypedDict):
 
     # Set by the router node every turn. No default/reducer needed since
     # router always overwrites it — there's no "sticky" agent state to merge.
-    route: Literal["chat", "qa", "deep_dive"] | None
+    route: RouteOutput| None
 
     # Session-scoped counter for send_cv_email's rate limit (max 5/session).
     # Plain int, no custom reducer — nodes that update it (only send_cv_email,
