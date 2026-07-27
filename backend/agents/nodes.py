@@ -1,4 +1,3 @@
-from langgraph.graph import StateGraph,START,END
 from langchain_core.messages import AIMessage, ToolMessage
 from functools import lru_cache
 from pathlib import Path
@@ -16,9 +15,9 @@ DEEP_DIVE_SYSTEM_PROMPT_PATH = Path(__file__).parent / "deep_dive_system_prompt.
 @lru_cache(maxsize=1)
 def load_qa_system_prompt() -> str:
     return QA_SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
+@lru_cache(maxsize=1)
 def load_deep_dive_system_prompt() -> str :
     return DEEP_DIVE_SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
-
 
 def _filter_foreign_tool_messages(messages: list, allowed_tools: list) -> list:
     """
@@ -54,13 +53,13 @@ def classify_intent(state: ChatState) -> dict:
         {"role": "system", "content": task},
         {"role": "user", "content": state["messages"][-1].content},
     ])
-    state['route'] = result.route
-    return {"route": result.route}
+    #state['route'] = result.route
+    return {"route": result['route']}
 
 
 QA_TOOLS = [search_resume, navigate_to_section, send_cv_email]
 
-def qa_agent(state: ChatState)-> str :
+def qa_agent(state: ChatState)-> dict :
     qa_agent_llm = llm.bind_tools(QA_TOOLS)
     role_prompt = load_qa_system_prompt()
 
@@ -78,7 +77,7 @@ def qa_agent(state: ChatState)-> str :
 DEEP_DIVE_TOOLS = [get_github_repos, get_repo_details]
 
 
-def deep_dive_agent(state: ChatState)-> str :
+def deep_dive_agent(state: ChatState)-> dict :
     deep_dive_agent_llm = llm.bind_tools(DEEP_DIVE_TOOLS)
     role_prompt = load_deep_dive_system_prompt()
 
