@@ -2,7 +2,7 @@ from langgraph.graph import StateGraph,START,END
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
 
-from nodes import classify_intent, qa_agent, deep_dive_agent, QA_TOOLS, DEEP_DIVE_TOOLS
+from .nodes import classify_intent, qa_agent, deep_dive_agent, QA_TOOLS, DEEP_DIVE_TOOLS
 from schemas.graph import ChatState, RouteOutput
 
 
@@ -24,13 +24,13 @@ graph_builder.add_node("deep_dive_tools", ToolNode(DEEP_DIVE_TOOLS))
 
 graph_builder.add_edge(START,"classify_intent")
 
-graph_builder.add_conditional_edge(
+graph_builder.add_conditional_edges(
     "classify_intent",
     route_after_classify,
     {"qa_agent":"qa_agent","deep_dive_agent":"deep_dive_agent"}
 )
 
-graph_builder.add_conditional_edge(
+graph_builder.add_conditional_edges(
     "qa_agent",
     tools_condition,
     {"tools":"qa_tools",END:END}
@@ -38,7 +38,7 @@ graph_builder.add_conditional_edge(
 
 graph_builder.add_edge("qa_tools","qa_agent")
 
-graph_builder.add_conditional_edge(
+graph_builder.add_conditional_edges(
     "deep_dive_agent",
     tools_condition,
     {"tools":"deep_dive_tools",END:END}

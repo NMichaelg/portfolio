@@ -1,5 +1,6 @@
 import json
 from agents.graph import graph
+from typing import Any, AsyncGenerator
 
 
 TOOL_ACTION_MAP = {
@@ -7,16 +8,51 @@ TOOL_ACTION_MAP = {
     "send_cv_email": "email",
 }
 
+STREAMING_NODES = {"qa_agent", "deep_dive_agent"}
+
+
+def _serialize_tool_output(output : Any) -> dict:
+    content = getattr(output,"content",output)
+    if isinstance(content, dict):
+        return content
+    try :
+        return json.loads(content)
+    except (TypeError, json.JSONDecodeError):
+        return {"raw": content}
+
 async def stream_chat_response(input_state, config):
-    async for event in graph.astream_events(input_state, config, version="v2"):
-        kind = event["event"]
+    try :
+        async for event in graph.astream_events(input_state, config, version="v2"):
+            kind = event["event"]
 
-        if kind == "on_chat_model_stream":
-            chunk = event["data"]["chunk"]
-            if chunk.content:
-                yield json.dumps({"type": "text", "content": chunk.content}) + "\n"
+            if kind == "on_chat_model_stream":
+                node = event.get("metadata", {}).get("langgraph_node")
+                if node not in STREAMING_NODES:
+                    continue
+                chunk = event["data"]["chunk"]
+                if chunk.content:
+                    yield json.dumps({"type": "text", "content": chunk.content}) + "\n"
 
-        elif kind == "on_tool_end" and event["name"] == "navigate_to_section":
-            output = event["data"]["output"]
-            content = output.content if isinstance(output.content, dict) else json.loads(output.content)
-            yield json.dumps({"type": "action", "action": "navigate", "target": content["target"]}) + "\n"
+            elif kind == "on_tool_end" and event["name"]:
+                action = TOOL_ACTION_MAP.get(event["name"])
+                if action is None :
+                    continue
+
+                fields = _serialize_tool_output(event["data"]["output"])
+                yield json.dumps({"type": "action", "action": action, **fields}) + "\n"
+    except Exception as exc :
+        yield json.dumps({"type": "error", "message": str(exc)}) + "\n"
+
+    state = await graph.aget_state(config)
+    if state.next:
+        for task in state.tasks:
+            for intr in getattr(task, "interrupts", None) or []:
+                yield json.dumps(
+                    {"type": "interrupt", "action": "confirm_email", "data": intr.value}
+                ) + "\n"
+ 
+    yield json.dumps({"type": "done"}) + "\n"
+
+
+
+

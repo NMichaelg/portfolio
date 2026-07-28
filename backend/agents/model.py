@@ -3,7 +3,7 @@ import os
 from langchain_openai import ChatOpenAI
 
 LLM_API_KEY = os.environ["LLM_API_KEY"]
-LLM_BASE_URL = os.envron["LLM_BASE_URL"]
+LLM_BASE_URL = os.environ["LLM_BASE_URL"]
 
 llm = ChatOpenAI(
     model = 'openai/gpt-oss-20b',

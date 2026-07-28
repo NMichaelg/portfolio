@@ -44,7 +44,10 @@ _embedding: HuggingFaceEmbeddings | None = None
 def get_embedding_model() -> HuggingFaceEmbeddings:
     global _embedding
     if _embedding is None:
-        _embedding = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+        _embedding = HuggingFaceEmbeddings(
+            model_name=EMBEDDING_MODEL_NAME,
+            model_kwargs = {"device":"cpu"}
+        )
     return _embedding
 
 

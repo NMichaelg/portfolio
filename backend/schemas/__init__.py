@@ -3,3 +3,5 @@ from .tool import SendCvEmailInput,SendCvEmailConfirmation,EmailSessionState,Sen
 from .tool import RepoSummary,RepoDetails
 
 from .graph import ChatState, RouteOutput
+
+from .api import ChatRequest

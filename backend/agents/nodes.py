@@ -4,9 +4,9 @@ from pathlib import Path
 
 
 from schemas.graph import ChatState, RouteOutput
-from model import llm 
-from tools import search_resume, navigate_to_section, send_cv_email
-from tools import get_github_repos, get_repo_details
+from .model import llm 
+from .tools import search_resume, navigate_to_section, send_cv_email
+from .tools import get_github_repos, get_repo_details
 
 
 QA_SYSTEM_PROMPT_PATH = Path(__file__).parent / "qa_system_prompt.md"
