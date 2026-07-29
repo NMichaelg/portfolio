@@ -5,7 +5,7 @@ import logging
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from langgraph.types import Command
 from langchain_core.messages import HumanMessage
 from fastapi.responses import StreamingResponse
@@ -13,8 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 from agents import graph
-from schemas import ChatRequest
+from schemas import ChatRequest, PasswordRequest
 from streaming.ndjson import stream_chat_response 
+from auth import check_password
 
 app = FastAPI(title = "BackEnd Portfolio")
 logger = logging.getLogger("portfolio_backend")
@@ -27,6 +28,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+ 
+@app.get("/healthz")
+async def healthz():
+    return {"status": "ok"}
 
 @app.post("/api/chat")
 async def chat(payload : ChatRequest):
@@ -81,3 +87,10 @@ async def chat(payload : ChatRequest):
 
     return StreamingResponse(event_stream(), media_type="application/x-ndjson")
     
+@app.post("/api/auth/password")
+async def auth_password(payload: PasswordRequest, request : Request):
+    thread_id = (payload.thread_id or "").strip() or str(f"chat_thread_{uuid.uuid4()}")
+    check_password(request, thread_id, payload.password)
+    return {"authorized" : True, "thread_id": thread_id}
+
+

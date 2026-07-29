@@ -54,6 +54,7 @@ def test_graph():
         m.pretty_print()
 
 
+
 def test_draw_graph():
     png_bytes = graph.get_graph().draw_mermaid_png()
 
