@@ -20,12 +20,12 @@ class _AttemptRecord:
     count : int = 0
     locked_until : float = 0.0
 
-_attempts = dict[str, _AttemptRecord] = {}
+_attempts : dict[str, _AttemptRecord] = {}
 
 _authorized_threads: set[str] = set()
 
 def _client_id(request: Request) -> str:
-    forwarded = request.header.get("x-forwarded-for")
+    forwarded = request.headers.get("x-forwarded-for")
     if forwarded :
         return forwarded.split(",")[0].strip()
 
@@ -43,6 +43,8 @@ def check_password(request: Request, thread_id: str, password: str) -> None :
 
     now = time.time()
 
+    retry_after = int(record.locked_until - now)
+
     if record.locked_until > now :
         retry_after = int(record.locked_until - now)
         raise HTTPException(
@@ -53,11 +55,11 @@ def check_password(request: Request, thread_id: str, password: str) -> None :
 
     if password != PASSWORD :
         record.count += 1
-        if record.count > MAX_ATTEMPT:
+        if record.count >= MAX_ATTEMPT:
             record.locked_until = now + LOCKOUT_TIME_SECONDS
             record.count = 0
             raise HTTPException(
-                status_code=401,
+                status_code=429,
                 detail = f"Too many failed attempt, Locked for {LOCKOUT_TIME_SECONDS // 60} minutes ",
                 headers = {"Retry-After":str(retry_after)},
             )
@@ -67,7 +69,6 @@ def check_password(request: Request, thread_id: str, password: str) -> None :
         raise HTTPException(
             status_code=401,
             detail = f"Incorrect password. {remaining} attempt(s) remaining before lockout",
-            headers = {"Retry-After":str(retry_after)},
         )
 
     record.count = 0

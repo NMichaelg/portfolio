@@ -7,7 +7,7 @@ from schemas.graph import ChatState, RouteOutput
 from langchain_core.runnables import RunnableConfig
 
 
-from .model import llm,get_llm
+from .model import get_llm
 from .tools import search_resume, navigate_to_section, send_cv_email
 from .tools import get_github_repos, get_repo_details
 
