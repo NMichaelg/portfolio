@@ -4,7 +4,10 @@ from pathlib import Path
 
 
 from schemas.graph import ChatState, RouteOutput
-from .model import llm 
+from langchain_core.runnables import RunnableConfig
+
+
+from .model import llm,get_llm
 from .tools import search_resume, navigate_to_section, send_cv_email
 from .tools import get_github_repos, get_repo_details
 
@@ -42,8 +45,8 @@ def _filter_foreign_tool_messages(messages: list, allowed_tools: list) -> list:
         filtered.append(msg)
 
     return filtered
-def classify_intent(state: ChatState) -> dict:
-    classifier = llm.with_structured_output(RouteOutput)
+def classify_intent(state: ChatState, config : RunnableConfig) -> dict:
+    classifier = get_llm(config).with_structured_output(RouteOutput)
     task = """
     Classify which agent should handle this user message:
     - "qa": general questions about background, skills, experience, navigating the site, or requesting the CV/resume
@@ -59,8 +62,8 @@ def classify_intent(state: ChatState) -> dict:
 
 QA_TOOLS = [search_resume, navigate_to_section, send_cv_email]
 
-def qa_agent(state: ChatState)-> dict :
-    qa_agent_llm = llm.bind_tools(QA_TOOLS)
+def qa_agent(state: ChatState, config: RunnableConfig)-> dict :
+    qa_agent_llm = get_llm(config).bind_tools(QA_TOOLS)
     role_prompt = load_qa_system_prompt()
 
     messages = _filter_foreign_tool_messages(state["messages"], allowed_tools=QA_TOOLS)
@@ -77,8 +80,8 @@ def qa_agent(state: ChatState)-> dict :
 DEEP_DIVE_TOOLS = [get_github_repos, get_repo_details]
 
 
-def deep_dive_agent(state: ChatState)-> dict :
-    deep_dive_agent_llm = llm.bind_tools(DEEP_DIVE_TOOLS)
+def deep_dive_agent(state: ChatState, config: RunnableConfig)-> dict :
+    deep_dive_agent_llm = get_llm(config).bind_tools(DEEP_DIVE_TOOLS)
     role_prompt = load_deep_dive_system_prompt()
 
     messages = _filter_foreign_tool_messages(state["messages"], allowed_tools=DEEP_DIVE_TOOLS)

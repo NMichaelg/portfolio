@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from agents import graph
 from schemas import ChatRequest, PasswordRequest
 from streaming.ndjson import stream_chat_response 
-from auth import check_password
+from auth import check_password, require_access, is_authorized
 
 app = FastAPI(title = "BackEnd Portfolio")
 logger = logging.getLogger("portfolio_backend")
@@ -35,10 +35,16 @@ async def healthz():
     return {"status": "ok"}
 
 @app.post("/api/chat")
-async def chat(payload : ChatRequest):
+async def chat(payload : ChatRequest, request: Request):
 
     thread_id = payload.thread_id or str(f"chat_thread_{uuid.uuid4()}")
     config = {"configurable" : {"thread_id" : thread_id}}
+
+    require_access(request, thread_id, payload.provider, payload.api_key)
+
+    if not is_authorized(thread_id):
+        config["configurable"]["provider"] = payload.provider
+        config["configurable"]["api_key"] = payload.api_key
 
     current_state = await graph.aget_state(config) # Get chat state of this thread
     is_new_thread = not current_state.values # Check if this thread is fresh new (no msg yet)
