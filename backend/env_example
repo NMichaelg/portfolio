@@ -1,0 +1,15 @@
+RESEND_API_KEY=your_resend_api_key
+
+CV_SENDER_EMAIL=donotreply@email
+PERSONAL_EMAIL=yourpersonal@email
+CV_PDF_PATH="local_info/Profile.pdf"
+EMAIL_DB_PATH="db/app.sqlite3"
+
+GITHUB_PAT=your_github_api_token
+
+LLM_API_KEY=your_default_llm_api
+LLM_BASE_URL=your_default_llm_api_base_url
+
+CHAT_PASSWORD = your_chat_password
+
+TESTING_ONLY_LLM_API_KEY = your_testing_llm_api
