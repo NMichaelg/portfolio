@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import asyncio
 import json
+import base64
 
 from pathlib import Path
 from pprint import pprint
@@ -325,3 +326,356 @@ def test_chat_endpoint_rejects_malformed_byok_key():
 
 #------------------------------------
 
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+#
+from agents import search_resume, navigate_to_section, send_cv_email
+from agents import (
+    _repos_cache,
+    _repo_details_cache,
+    _log_failed_email,
+    EMAIL_DB_PATH,
+)
+import sqlite3
+
+# ===========================================================================
+# search_resume — fix the assertion-less test, add the "not found" branch
+# ===========================================================================
+
+def test_search_resume_tool_returns_relevant_chunk():
+    """The original version of this test called .invoke() but asserted
+    nothing, so it would pass even if search_resume returned garbage or
+    raised silently-swallowed errors. This checks real content came back."""
+    from agents import search_resume
+
+    query = "What languages does Michael speak besides English?"
+    result = search_resume.invoke({"query": query})
+
+    assert isinstance(result, str)
+    assert result != ""
+    assert "NOT_FOUND" not in result
+    # Loose content check — avoids being brittle to embedding-model drift
+    assert "Vietnamese" in result or "Chinese" in result or "Finnish" in result
+
+
+def test_search_resume_tool_not_found_when_no_matches():
+    """Exercises the NOT_FOUND fallback branch, which the happy-path test
+    never touches. Mocks the vector store directly rather than relying on
+    a query that's *hopefully* irrelevant enough to return nothing."""
+    from agents import search_resume
+
+    with patch("agents.tools._vector_store") as fake_store:
+        fake_store.similarity_search.return_value = []
+        result = search_resume.invoke({"query": "anything"})
+
+    assert "NOT_FOUND" in result
+    assert "not sure" in result.lower() or "email" in result.lower()
+
+
+def test_search_resume_tool_includes_header_path_in_output():
+    """Confirms the h1/h2/h3 metadata join logic actually runs and prefixes
+    the chunk, since a wrong metadata key silently drops the header path."""
+    from agents import search_resume
+
+    fake_doc = MagicMock()
+    fake_doc.metadata = {"h1": "Core Technical Skills"}
+    fake_doc.page_content = "AI & Agentic Workflows: LangGraph, LangChain..."
+
+    with patch("agents.tools._vector_store") as fake_store:
+        fake_store.similarity_search.return_value = [fake_doc]
+        result = search_resume.invoke({"query": "what AI tools does he use"})
+
+    assert "Core Technical Skills" in result
+    assert "LangGraph" in result
+
+
+# ===========================================================================
+# navigate_to_section — completely untested before this
+# ===========================================================================
+
+def test_navigate_to_section_tool_returns_ok_status_and_target():
+    from agents import navigate_to_section
+
+    result = navigate_to_section.invoke({"target": "experience"})
+
+    assert result["status"] == "ok"
+    assert result["target"] == "experience"
+
+
+def test_navigate_to_section_tool_rejects_unknown_target():
+    """target is typed as SessionId (per schemas/tool.py) rather than a
+    bare str, so an ID outside Table 1 should fail schema validation
+    instead of silently returning a target the frontend has no selector
+    for. If SessionId isn't a constrained Literal/enum, this test will
+    fail and is a signal to tighten the schema."""
+    from agents import navigate_to_section
+    from pydantic import ValidationError as PydanticValidationError
+
+    with pytest.raises((PydanticValidationError, Exception)):
+        navigate_to_section.invoke({"target": "not-a-real-section"})
+
+
+# ===========================================================================
+# send_cv_email — the biggest gap. Session limit, interrupt confirm/cancel,
+# malformed interrupt payload, and exhausted retries all need coverage.
+# ===========================================================================
+
+@pytest.fixture
+def base_email_config():
+    return {"configurable": {"thread_id": "email-test-thread"}}
+
+
+def _invoke_send_cv_email(recipient_email, emails_sent, config, tool_call_id="call-1", recipient_name=None):
+    from agents import send_cv_email
+    return send_cv_email.invoke(
+        {
+            "recipient_email": recipient_email,
+            "recipient_name": recipient_name,
+            "state": {"messages": [], "emails_sent_this_session": emails_sent},
+            "tool_call_id": tool_call_id,
+        },
+        config=config,
+    )
+
+
+def test_send_cv_email_tool_blocks_when_session_limit_reached(base_email_config):
+    """At MAX_EMAILS_PER_SESSION, the tool should short-circuit to
+    'cancelled' *before* ever calling interrupt() -- otherwise the user
+    gets prompted to confirm an email that will never send."""
+    with patch("agents.tools.interrupt") as fake_interrupt:
+        command = _invoke_send_cv_email("hr@example.com", emails_sent=5, config=base_email_config)
+
+    fake_interrupt.assert_not_called()
+    tool_msg = command.update["messages"][0]
+    payload = json.loads(tool_msg.content)
+    assert payload["status"] == "cancelled"
+    assert "max number" in payload["message"].lower()
+
+
+def test_send_cv_email_tool_sends_on_confirmation(base_email_config):
+    """Happy path: interrupt returns a confirm decision, the send succeeds
+    on the first try, and the session counter increments."""
+    with patch("agents.tools.interrupt", return_value={"recipient_email": "hr@example.com", "action": "confirm"}), \
+         patch("agents.tools._send_email_with_resend") as fake_send:
+        command = _invoke_send_cv_email("hr@example.com", emails_sent=0, config=base_email_config)
+
+    fake_send.assert_called_once_with("hr@example.com", None)
+    tool_msg = command.update["messages"][0]
+    payload = json.loads(tool_msg.content)
+    assert payload["status"] == "sent"
+    assert command.update["emails_sent_this_session"] == 1
+
+
+def test_send_cv_email_tool_cancelled_on_user_decline(base_email_config):
+    with patch("agents.tools.interrupt", return_value={"recipient_email": "hr@example.com", "action": "cancel"}), \
+         patch("agents.tools._send_email_with_resend") as fake_send:
+        command = _invoke_send_cv_email("hr@example.com", emails_sent=0, config=base_email_config)
+
+    fake_send.assert_not_called()
+    tool_msg = command.update["messages"][0]
+    payload = json.loads(tool_msg.content)
+    assert payload["status"] == "cancelled"
+    # cancelling shouldn't consume a session slot
+    assert "emails_sent_this_session" not in command.update
+
+
+def test_send_cv_email_tool_handles_malformed_interrupt_payload(base_email_config):
+    """If whatever resumes the interrupt() doesn't match
+    SendCvEmailConfirmation's schema (e.g. a plain string, or a dict
+    missing `action`), the tool should degrade to 'cancelled' rather than
+    raising an unhandled ValidationError up through the graph."""
+    with patch("agents.tools.interrupt", return_value="yes please"), \
+         patch("agents.tools._send_email_with_resend") as fake_send:
+        command = _invoke_send_cv_email("hr@example.com", emails_sent=0, config=base_email_config)
+
+    fake_send.assert_not_called()
+    tool_msg = command.update["messages"][0]
+    payload = json.loads(tool_msg.content)
+    assert payload["status"] == "cancelled"
+    assert "confirmation" in payload["message"].lower()
+
+
+def test_send_cv_email_tool_logs_to_sqlite_after_exhausting_retries(base_email_config, tmp_path):
+    """Forces every send attempt to fail and checks the SQLite fallback
+    actually gets a row -- this is the one branch that silently fails in
+    production if _log_failed_email's SQL or path is wrong, since the
+    tool still returns a friendly message either way."""
+    import time as time_module
+
+    test_db = tmp_path / "failed_emails_test.db"
+
+    with patch("agents.tools.interrupt", return_value={"recipient_email": "hr@example.com", "action": "confirm"}), \
+         patch("agents.tools._send_email_with_resend", side_effect=RuntimeError("resend down")), \
+         patch("agents.tools.EMAIL_DB_PATH", str(test_db)), \
+         patch("agents.tools.time.sleep"):  # skip real exponential backoff delays
+        command = _invoke_send_cv_email("hr@example.com", emails_sent=0, config=base_email_config)
+
+    tool_msg = command.update["messages"][0]
+    payload = json.loads(tool_msg.content)
+    assert payload["status"] == "failed_will_retry_log"
+
+    conn = sqlite3.connect(str(test_db))
+    try:
+        rows = conn.execute(
+            "SELECT recipient_email, status, retry_count FROM failed_email_log WHERE recipient_email = ?",
+            ("hr@example.com",),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    assert len(rows) == 1
+    assert rows[0][1] == "pending"
+    assert rows[0][2] == 5  # MAX_SEND_RETRIES
+
+
+# ===========================================================================
+# get_github_repos — cache hit/miss behavior was never verified
+# ===========================================================================
+
+@pytest.fixture(autouse=True)
+def reset_github_caches():
+    """Module-level caches persist across tests and will make a 'cache
+    miss' test pass for the wrong reason if a prior test already warmed
+    it. Same idea as your auth reset_auth_state fixture."""
+    from agents.tools import _repos_cache, _repo_details_cache
+    _repos_cache["data"] = None
+    _repos_cache["timestamp"] = 0
+    _repo_details_cache.clear()
+    yield
+    _repos_cache["data"] = None
+    _repos_cache["timestamp"] = 0
+    _repo_details_cache.clear()
+
+
+_FAKE_REPOS_JSON = [
+    {
+        "name": "portfolio", "description": "desc", "language": "Python",
+        "stargazers_count": 3, "html_url": "https://github.com/x/portfolio",
+        "topics": ["ai"], "updated_at": "2026-01-01T00:00:00Z", "fork": False,
+    }
+]
+
+
+def test_get_github_repos_tool_uses_cache_on_second_call():
+    from agents import get_github_repos
+
+    fake_response = MagicMock()
+    fake_response.json.return_value = _FAKE_REPOS_JSON
+    fake_response.raise_for_status.return_value = None
+
+    with patch("agents.tools.httpx.get", return_value=fake_response) as fake_get:
+        first = get_github_repos.invoke({})
+        second = get_github_repos.invoke({})
+
+    fake_get.assert_called_once()  # second call should hit the cache, not the network
+    assert first == second
+
+
+def test_get_github_repos_tool_refetches_after_cache_expiry():
+    from agents import get_github_repos
+    import agents.tools as tools_module
+
+    fake_response = MagicMock()
+    fake_response.json.return_value = _FAKE_REPOS_JSON
+    fake_response.raise_for_status.return_value = None
+
+    with patch("agents.tools.httpx.get", return_value=fake_response) as fake_get:
+        get_github_repos.invoke({})
+        # simulate the TTL having elapsed
+        tools_module._repos_cache["timestamp"] -= (tools_module.CACHE_TTL_SECONDS + 1)
+        get_github_repos.invoke({})
+
+    assert fake_get.call_count == 2
+
+
+def test_get_github_repos_tool_skips_forks():
+    from agents import get_github_repos
+
+    forked = dict(_FAKE_REPOS_JSON[0])
+    forked["name"] = "some-fork"
+    forked["fork"] = True
+
+    fake_response = MagicMock()
+    fake_response.json.return_value = _FAKE_REPOS_JSON + [forked]
+    fake_response.raise_for_status.return_value = None
+
+    with patch("agents.tools.httpx.get", return_value=fake_response):
+        repos = get_github_repos.invoke({})
+
+    assert all(r.name != "some-fork" for r in repos)
+
+
+# ===========================================================================
+# get_repo_details — 404 handling and caching were never verified
+# ===========================================================================
+
+def test_get_repo_details_tool_404_returns_available_repos():
+    """This is the exact 'catch the 404, suggest what does exist' behavior
+    called out in Portfolio_Website.md, and it was never actually tested."""
+    from agents import get_repo_details
+
+    not_found_response = MagicMock(status_code=404)
+
+    fake_repos_response = MagicMock()
+    fake_repos_response.json.return_value = _FAKE_REPOS_JSON
+    fake_repos_response.raise_for_status.return_value = None
+
+    with patch("agents.tools.httpx.get", side_effect=[not_found_response, fake_repos_response]):
+        result = get_repo_details.invoke({"repo_name": "does-not-exist"})
+
+    assert result["error"] == "not_found"
+    assert "does-not-exist" in result["message"]
+    assert "portfolio" in result["available_repos"]
+
+
+def test_get_repo_details_tool_uses_cache_on_second_call():
+    from agents import get_repo_details
+
+    repo_response = MagicMock(status_code=200)
+    repo_response.json.return_value = {
+        "name": "portfolio", "description": "d", "language": "Python",
+        "stargazers_count": 1, "html_url": "https://github.com/x/portfolio",
+        "topics": [], "updated_at": "2026-01-01T00:00:00Z",
+    }
+    repo_response.raise_for_status.return_value = None
+
+    langs_response = MagicMock(status_code=200)
+    langs_response.json.return_value = {"Python": 1000}
+
+    readme_response = MagicMock(status_code=200)
+    readme_response.json.return_value = {"content": base64.b64encode(b"# Portfolio\nHello").decode()}
+
+    with patch(
+        "agents.tools.httpx.get",
+        side_effect=[repo_response, langs_response, readme_response],
+    ) as fake_get:
+        first = get_repo_details.invoke({"repo_name": "portfolio"})
+        second = get_repo_details.invoke({"repo_name": "portfolio"})
+
+    assert fake_get.call_count == 3  # repo + languages + readme, once total
+    assert first is second
+
+
+def test_get_repo_details_tool_readme_excerpt_is_decoded_and_truncated():
+    from agents import get_repo_details
+
+    repo_response = MagicMock(status_code=200)
+    repo_response.json.return_value = {
+        "name": "portfolio", "description": None, "language": "Python",
+        "stargazers_count": 0, "html_url": "https://github.com/x/portfolio",
+        "topics": [], "updated_at": "2026-01-01T00:00:00Z",
+    }
+    repo_response.raise_for_status.return_value = None
+
+    langs_response = MagicMock(status_code=200)
+    langs_response.json.return_value = {}
+
+    long_readme = "A" * 2000
+    readme_response = MagicMock(status_code=200)
+    readme_response.json.return_value = {"content": base64.b64encode(long_readme.encode()).decode()}
+
+    with patch("agents.tools.httpx.get", side_effect=[repo_response, langs_response, readme_response]):
+        details = get_repo_details.invoke({"repo_name": "portfolio"})
+
+    assert len(details.readme_excerpt) == 1500
+    assert details.readme_excerpt == long_readme[:1500]

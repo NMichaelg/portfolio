@@ -6,7 +6,7 @@ test_list_k = "auth or byok or password or chat_endpoint or stream_chat_response
 
 command = [
     "uv", "run", "pytest", "test.py",
-    "-k", test_list_k,
+    "-k", "tool",
     "-v"
 ]
 
