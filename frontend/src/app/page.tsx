@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Button } from "@/components/ui/button"
 
 export default function Home() {
   return (
@@ -59,7 +60,11 @@ export default function Home() {
             Documentation
           </a>
         </div>
+        <div className="flex min-h-svh items-center justify-center">
+          <Button>Click me</Button>
+        </div>
       </main>
     </div>
+    
   );
 }
