@@ -79,12 +79,15 @@ export default function Experience() {
   return (
     <section id="experience" className="px-6 md:px-16 py-20 md:py-28">
       <div className="max-w-3xl mx-auto">
+        
         <p className="font-mono text-sm text-primary tracking-wide mb-3">
           EXPERIENCE
         </p>
+
         <h2 className="font-heading font-black text-3xl md:text-4xl mb-12">
           Where I&apos;ve built things.
         </h2>
+
         <Load_exp_list />
       </div>
     </section>
