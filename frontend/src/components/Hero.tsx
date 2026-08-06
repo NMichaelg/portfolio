@@ -17,20 +17,17 @@ export default function Hero() {
 export function Left() {
   return (
     <div>
-      <p className="font-mono text-sm text-primary tracking-wide mb-4">
-        AI_ENGINEER // HO_CHI_MINH_CITY
-      </p>
       <h1 className="font-heading font-black text-4xl md:text-6xl leading-[1.05] mb-6">
-        I build AI that
+        I build AI from scratch —
         <br />
-        actually does things.
+        <span className="text-primary">for you.</span>
       </h1>
       <p className="text-muted-foreground text-lg max-w-md mb-8">
-        AI/Software Engineer specializing in multi-agent systems —
+        ML/AI/Software Engineer specializing in ML models and AI systems —
         you&apos;re talking to one on this page right now.
       </p>
-      <Button size="lg" render={<a href="#chat" />}>
-        Talk with my AI
+      <Button size="lg" >
+        Talk with my agent
       </Button>
     </div>
   );
