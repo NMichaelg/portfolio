@@ -53,9 +53,9 @@ export function Load_exp_list() {
           {roles.map((role) => (
             <div
               key={role.title + role.period}
-              className="border-l-2 border-secondary pl-6 relative"
+              className=" border-l-2 border-secondary pl-6 relative"
             >
-              <span className="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-primary" />
+              <span className="absolute -left-1.75 top-1 w-3 h-3 rounded-full bg-primary" />
               <p className="font-mono text-xs text-muted-foreground mb-1">{role.period}</p>
               <h3 className="font-heading font-black text-xl mb-1">
                 {role.title}
@@ -77,7 +77,7 @@ export function Load_exp_list() {
 
 export default function Experience() {
   return (
-    <section id="experience" className="px-6 md:px-16 py-20 md:py-28">
+    <section id="experience" className="border-t border-border px-6 md:px-16 py-20 md:py-28">
       <div className="max-w-3xl mx-auto">
         
         <p className="font-mono text-sm text-primary tracking-wide mb-3">

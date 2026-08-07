@@ -46,7 +46,7 @@ const groups: Group[] = [
 
 export default function TechStack() {
   return (
-    <section id="tech-stack" className="px-6 md:px-16 py-20 md:py-28">
+    <section id="tech-stack" className="border-t border-border px-6 md:px-16 py-20 md:py-28">
       <div className="max-w-3xl mx-auto">
         <p className="font-mono text-sm text-primary tracking-wide mb-3">
           TECH STACK
