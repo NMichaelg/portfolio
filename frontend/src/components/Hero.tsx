@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 
-export default function Hero() {
+export default function Hero({ onOpenChat }: { onOpenChat: () => void }) {
   return (
     <section
       id="hero"
