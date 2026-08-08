@@ -7,6 +7,7 @@ import TechStack from "@/components/Techstack";
 import Education from "@/components/Education";
 import Projects from "@/components/Project";
 import Contact from "@/components/Contact";
+import ChatWidget from "@/components/ChatWidget";
 
 export default function Home() {
   const [chatOpen, setChatOpen] = useState(false);
@@ -19,6 +20,8 @@ export default function Home() {
       <Education />
       <Projects />
       <Contact onOpenChat={() => setChatOpen(true)} />
+      <ChatWidget open={chatOpen} onOpenChange={setChatOpen} />
+
     </main>
   );
 }
