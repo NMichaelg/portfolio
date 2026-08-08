@@ -1,69 +1,39 @@
 import { Badge } from "@/components/ui/badge";
+import type { EducationData } from "@/lib/content";
 
-type Degree = {
-  title: string;
-  org: string;
-  period: string;
-  note?: string;
-};
-
-const degrees: Degree[] = [
-  {
-    title: "Bachelor of Engineering, Computer Science",
-    org: "Bach Khoa University (HCMUT)",
-    period: "Aug 2020 — Jun 2025",
-    note: "Ho Chi Minh City, Vietnam",
-  },
-  {
-    title: "High School Diploma",
-    org: "Lương Thế Vinh High School",
-    period: "2017 — 2020",
-  },
-];
-
-const honors = [
-  "Gold Medal — National Contest of Creativity for Teenagers (2020)",
-  "National Creative Youth Medal",
-  "Gold Medal — State Contest of Science and Engineering",
-];
-
-const certifications = ["IELTS 7.0"];
-
-export default function Education() {
+export default function Education({ data }: { data: EducationData }) {
   return (
     <section id="education" className="border-t border-border px-6 md:px-16 py-20 md:py-28">
       <div className="max-w-3xl mx-auto">
-        <p className="font-mono text-sm text-primary tracking-wide mb-3">
-          EDUCATION
-        </p>
-        <h2 className="font-heading font-black text-3xl md:text-4xl mb-12">
-          Where I studied.
-        </h2>
-
-        <div className="divide-y divide-border mb-12">
-          {degrees.map((degree) => (
-            <div
-              key={degree.title}
-              className="py-6 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1"
-            >
-              <div>
-                <h3 className="font-heading font-black text-xl">
-                  {degree.title}
-                </h3>
-                <p className="font-mono text-sm text-secondary">
-                  {degree.org}
-                  {degree.note && (
-                    <span className="text-muted-foreground"> · {degree.note}</span>
-                  )}
-                </p>
-              </div>
-              <p className="font-mono text-sm text-muted-foreground shrink-0">
-                {degree.period}
+        <p className="font-mono text-sm text-primary tracking-wide mb-3">EDUCATION</p>
+        <h2 className="font-heading font-black text-3xl md:text-4xl mb-12">Where I studied.</h2>
+        <div className="space-y-10 mb-12">
+          {data.degrees.map((degree) => (
+            <div key={degree.title} className="border-l-2 border-secondary pl-6 relative">
+              <span className="absolute -left-1.75 top-1 w-3 h-3 rounded-full bg-primary" />
+              <p className="font-mono text-xs text-muted-foreground mb-1">{degree.period}</p>
+              <h3 className="font-heading font-black text-xl mb-1">{degree.title}</h3>
+              <p className="font-mono text-sm text-secondary">
+                {degree.org}
+                {degree.note && <span className="block text-xs mt-0.5 text-muted-foreground">{degree.note}</span>}
               </p>
             </div>
           ))}
         </div>
-        {/* honors/certifications badges unchanged below */}
+        <div className="grid sm:grid-cols-2 gap-8">
+          <div>
+            <h3 className="font-mono text-sm text-muted-foreground mb-3">Honors & Awards</h3>
+            <div className="flex flex-wrap gap-2">
+              {data.honors.map((h) => <Badge key={h} variant="secondary">{h}</Badge>)}
+            </div>
+          </div>
+          <div>
+            <h3 className="font-mono text-sm text-muted-foreground mb-3">Certifications</h3>
+            <div className="flex flex-wrap gap-2">
+              {data.certifications.map((c) => <Badge key={c} variant="secondary">{c}</Badge>)}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

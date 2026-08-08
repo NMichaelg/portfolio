@@ -1,8 +1,9 @@
 "use client";
-import { MessageCircle } from "lucide-react";
 
 import { useState, useEffect } from "react";
+import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useChatWidget } from "@/components/ChatProvider";
 import { Message, MessageContent } from "@/components/ui/message";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import {
@@ -25,18 +26,15 @@ const sampleMessages: ChatMessage[] = [
   { id: "3", role: "assistant", content: "Michael built a two-agent LangGraph system for this very site — a router that classifies intent, then hands off to a Q&A agent or a GitHub deep-dive agent." },
 ];
 
-export default function ChatWidget({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+export default function ChatWidget() {
+  const { open, setOpen } = useChatWidget();
   const [mounted, setMounted] = useState(false);
+  const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
 
   useEffect(() => {
     if (open) {
       setMounted(true);
+      setHasOpenedOnce(true);
     } else if (mounted) {
       const timeout = setTimeout(() => setMounted(false), 180);
       return () => clearTimeout(timeout);
@@ -49,16 +47,18 @@ export default function ChatWidget({
         <div className="fixed bottom-6 right-6 z-50">
           <Button
             size="icon-lg"
-            onClick={() => onOpenChange(true)}
+            onClick={() => setOpen(true)}
             className="rounded-full shadow-lg h-14 w-14"
             aria-label="Open chat"
           >
             <MessageCircle className="size-6" />
           </Button>
-          <span className="absolute -top-1 -right-1 flex size-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75 motion-reduce:animate-none" />
-            <span className="relative inline-flex size-3 rounded-full bg-primary" />
-          </span>
+          {!hasOpenedOnce && (
+            <span className="absolute -top-1 -right-1 flex size-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75 motion-reduce:animate-none" />
+              <span className="relative inline-flex size-3 rounded-full bg-primary" />
+            </span>
+          )}
         </div>
       )}
 
@@ -74,7 +74,7 @@ export default function ChatWidget({
               <p className="font-mono text-xs text-muted-foreground">Usually replies instantly</p>
             </div>
             <button
-              onClick={() => onOpenChange(false)}
+              onClick={() => setOpen(false)}
               aria-label="Close chat"
               className="text-muted-foreground hover:text-foreground transition-colors text-lg leading-none px-1"
             >

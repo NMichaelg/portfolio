@@ -1,4 +1,4 @@
-import siteContent from "../../../local_info/Portfolio.json";
+import siteContent from "../../contents/site.json";
 
 export type HeroData = {
   eyebrow: string;

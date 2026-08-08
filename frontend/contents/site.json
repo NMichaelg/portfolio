@@ -1,0 +1,110 @@
+{
+  "hero": {
+    "eyebrow": "AI_ENGINEER // HO_CHI_MINH_CITY",
+    "heading": "I build AI that actually does things.",
+    "subhead": "AI/Software Engineer specializing in multi-agent systems — you're talking to one on this page right now."
+  },
+  "experience": [
+    {
+      "title": "SAP System Administrator",
+      "org": "Homelab — michaelprivate.servebeer.com",
+      "period": "Aug 2025 — Present",
+      "bullets": [
+        "Designed and built a 24/7 self-hosted homelab: cloud storage, media streaming, adblocking",
+        "Provisioned lightweight Linux on Raspberry Pi 5",
+        "Configured network segmentation and private VPNs for secure access",
+        "Maintained uptime and reproducibility with Docker"
+      ]
+    },
+    {
+      "title": "AI Software Engineer",
+      "org": "IVS Joint Stock Company",
+      "period": "Jun 2025 — Nov 2025",
+      "bullets": [
+        "Built multi-agent AI systems with LangGraph, LangChain, and n8n",
+        "Integrated and optimized local LLMs with Ollama",
+        "Shipped scalable, low-latency endpoints with FastAPI"
+      ]
+    },
+    {
+      "title": "AI Engineer",
+      "org": "IVS Joint Stock Company",
+      "period": "Jun 2024 — Sep 2024",
+      "bullets": [
+        "Contributed to AI research and proof-of-concept features for enterprise applications"
+      ]
+    },
+    {
+      "title": "Working Student",
+      "org": "Unlimited Research Group of AI (URA), HCMUT",
+      "period": "Jul 2023 — Jun 2024",
+      "bullets": [
+        "Researched deep learning architectures and foundational model applications"
+      ]
+    }
+  ],
+  "techStack": [
+    {
+      "label": "AI & Agentic Workflows",
+      "skills": ["LangGraph", "LangChain", "n8n", "Ollama", "Local LLMs", "AI Agents", "Prompt Engineering"]
+    },
+    {
+      "label": "Backend & APIs",
+      "skills": ["FastAPI", "Python", "RESTful API Design"]
+    },
+    {
+      "label": "Infrastructure & DevOps",
+      "skills": ["Linux", "Raspberry Pi 5", "Docker", "Network Segmentation", "Private VPNs", "Cloud Storage"]
+    },
+    {
+      "label": "Traditional IT & Enterprise",
+      "skills": ["SAP Implementation", "System Administration", "Quality Assurance", "Project Management"]
+    }
+  ],
+  "projects": [
+    {
+      "name": "portfolio-agent",
+      "description": "This site — a LangGraph multi-agent chatbot backed by FastAPI, streaming NDJSON to a Next.js frontend.",
+      "tags": ["LangGraph", "FastAPI", "Next.js"],
+      "url": "https://github.com/yourusername/portfolio-agent"
+    },
+    {
+      "name": "sample-project-two",
+      "description": "Placeholder description — swap in a real project.",
+      "tags": ["Python", "Docker"],
+      "url": "https://github.com/yourusername/sample-project-two"
+    },
+    {
+      "name": "sample-project-three",
+      "description": "Placeholder description — swap in a real project.",
+      "tags": ["FastAPI", "PostgreSQL"],
+      "url": "https://github.com/yourusername/sample-project-three"
+    }
+  ],
+  "education": {
+    "degrees": [
+      {
+        "title": "Bachelor of Engineering, Computer Science",
+        "org": "Bach Khoa University (HCMUT)",
+        "period": "Aug 2020 — Jun 2025",
+        "note": "Ho Chi Minh City, Vietnam"
+      },
+      {
+        "title": "High School Diploma",
+        "org": "Lương Thế Vinh High School",
+        "period": "2017 — 2020"
+      }
+    ],
+    "honors": [
+      "Gold Medal — National Contest of Creativity for Teenagers (2020)",
+      "National Creative Youth Medal",
+      "Gold Medal — State Contest of Science and Engineering"
+    ],
+    "certifications": ["IELTS 7.0"]
+  },
+  "contact": {
+    "email": "michaelnguyen8302@gmail.com",
+    "linkedin": "https://www.linkedin.com/in/ân-nguyễn-824a2822a",
+    "facebook": "https://www.facebook.com/nMichaelg/"
+  }
+}
