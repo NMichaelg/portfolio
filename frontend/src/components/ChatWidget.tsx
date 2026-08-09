@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatWidget } from "@/components/ChatProvider";
+import AuthGate from "@/components/AuthGate";
 import { Message, MessageContent } from "@/components/ui/message";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import {
@@ -27,7 +28,7 @@ const sampleMessages: ChatMessage[] = [
 ];
 
 export default function ChatWidget() {
-  const { open, setOpen } = useChatWidget();
+  const { open, setOpen, unlocked } = useChatWidget();
   const [mounted, setMounted] = useState(false);
   const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
 
@@ -82,41 +83,47 @@ export default function ChatWidget() {
             </button>
           </div>
 
-          <MessageScrollerProvider>
-            <MessageScroller className="flex-1 px-4 py-4">
-              <MessageScrollerViewport>
-                <MessageScrollerContent>
-                  {sampleMessages.map((msg) => (
-                    <MessageScrollerItem
-                      key={msg.id}
-                      messageId={msg.id}
-                      scrollAnchor={msg.role === "user"}
-                    >
-                      <Message align={msg.role === "user" ? "end" : "start"}>
-                        <MessageContent>
-                          <Bubble
-                            align={msg.role === "user" ? "end" : "start"}
-                            variant={msg.role === "user" ? "default" : "secondary"}
-                          >
-                            <BubbleContent>{msg.content}</BubbleContent>
-                          </Bubble>
-                        </MessageContent>
-                      </Message>
-                    </MessageScrollerItem>
-                  ))}
-                </MessageScrollerContent>
-              </MessageScrollerViewport>
-            </MessageScroller>
-          </MessageScrollerProvider>
+          {unlocked ? (
+            <>
+              <MessageScrollerProvider>
+                <MessageScroller className="flex-1 px-4 py-4">
+                  <MessageScrollerViewport>
+                    <MessageScrollerContent>
+                      {sampleMessages.map((msg) => (
+                        <MessageScrollerItem
+                          key={msg.id}
+                          messageId={msg.id}
+                          scrollAnchor={msg.role === "user"}
+                        >
+                          <Message align={msg.role === "user" ? "end" : "start"}>
+                            <MessageContent>
+                              <Bubble
+                                align={msg.role === "user" ? "end" : "start"}
+                                variant={msg.role === "user" ? "default" : "secondary"}
+                              >
+                                <BubbleContent>{msg.content}</BubbleContent>
+                              </Bubble>
+                            </MessageContent>
+                          </Message>
+                        </MessageScrollerItem>
+                      ))}
+                    </MessageScrollerContent>
+                  </MessageScrollerViewport>
+                </MessageScroller>
+              </MessageScrollerProvider>
 
-          <div className="p-3 border-t border-border">
-            <input
-              type="text"
-              placeholder="Type a message..."
-              disabled
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground placeholder:text-muted-foreground/60 cursor-not-allowed"
-            />
-          </div>
+              <div className="p-3 border-t border-border">
+                <input
+                  type="text"
+                  placeholder="Type a message..."
+                  disabled
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground placeholder:text-muted-foreground/60 cursor-not-allowed"
+                />
+              </div>
+            </>
+          ) : (
+            <AuthGate />
+          )}
         </div>
       )}
     </>
