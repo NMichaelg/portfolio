@@ -1,0 +1,105 @@
+{
+  "hero": {
+    "eyebrow": "YOUR_ROLE // YOUR_CITY",
+    "heading": "YOUR_MAIN_HEADLINE",
+    "subhead": "A short introduction explaining who you are, what you specialize in, and what makes your work interesting."
+  },
+
+  "experience": [
+    {
+      "title": "YOUR_JOB_TITLE",
+      "org": "COMPANY_OR_ORGANIZATION_NAME",
+      "period": "START_DATE — END_DATE",
+      "bullets": [
+        "Describe your main responsibility or achievement.",
+        "Describe a technology, system, or project you worked with.",
+        "Describe a measurable result, improvement, or impact.",
+        "Add another relevant responsibility or achievement."
+      ]
+    },
+    {
+      "title": "YOUR_PREVIOUS_JOB_TITLE",
+      "org": "COMPANY_OR_ORGANIZATION_NAME",
+      "period": "START_DATE — END_DATE",
+      "bullets": [
+        "Describe your main responsibility or achievement.",
+        "Describe a technology, system, or project you worked with.",
+        "Describe a measurable result, improvement, or impact."
+      ]
+    }
+  ],
+
+  "techStack": [
+    {
+      "label": "CATEGORY_NAME",
+      "skills": [
+        "TECHNOLOGY_OR_SKILL_1",
+        "TECHNOLOGY_OR_SKILL_2",
+        "TECHNOLOGY_OR_SKILL_3"
+      ]
+    },
+    {
+      "label": "ANOTHER_CATEGORY",
+      "skills": [
+        "TECHNOLOGY_OR_SKILL_1",
+        "TECHNOLOGY_OR_SKILL_2",
+        "TECHNOLOGY_OR_SKILL_3"
+      ]
+    }
+  ],
+
+  "projects": [
+    {
+      "name": "PROJECT_NAME",
+      "description": "Briefly describe what the project does, what problem it solves, and/or what you built.",
+      "tags": [
+        "TECHNOLOGY_1",
+        "TECHNOLOGY_2",
+        "TECHNOLOGY_3"
+      ],
+      "url": "https://github.com/YOUR_USERNAME/YOUR_REPOSITORY"
+    },
+    {
+      "name": "PROJECT_NAME",
+      "description": "Briefly describe what the project does, what problem it solves, and/or what you built.",
+      "tags": [
+        "TECHNOLOGY_1",
+        "TECHNOLOGY_2"
+      ],
+      "url": "https://github.com/YOUR_USERNAME/YOUR_REPOSITORY"
+    }
+  ],
+
+  "education": {
+    "degrees": [
+      {
+        "title": "DEGREE_OR_QUALIFICATION",
+        "org": "SCHOOL_OR_UNIVERSITY_NAME",
+        "period": "START_DATE — END_DATE",
+        "note": "LOCATION_OR_OPTIONAL_NOTE"
+      },
+      {
+        "title": "PREVIOUS_DEGREE_OR_QUALIFICATION",
+        "org": "SCHOOL_NAME",
+        "period": "START_DATE — END_DATE"
+      }
+    ],
+
+    "honors": [
+      "AWARD_OR_HONOR_NAME",
+      "ANOTHER_AWARD_OR_HONOR",
+      "ANOTHER_AWARD_OR_HONOR"
+    ],
+
+    "certifications": [
+      "CERTIFICATION_NAME",
+      "ANOTHER_CERTIFICATION"
+    ]
+  },
+
+  "contact": {
+    "email": "YOUR_EMAIL_ADDRESS",
+    "linkedin": "https://www.linkedin.com/in/YOUR_USERNAME",
+    "facebook": "https://www.facebook.com/YOUR_USERNAME"
+  }
+}
