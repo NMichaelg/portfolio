@@ -10,3 +10,8 @@ class ChatRequest(BaseModel):
 class PasswordRequest(BaseModel):
     thread_id : str | None = None
     password: str
+
+class ByokRequest(BaseModel):
+    thread_id : str | None = None
+    provider: str
+    api_key: str

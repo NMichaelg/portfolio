@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 from fastapi import HTTPException, Request
 
+from agents import check_llm
+
 load_dotenv()
 
 
@@ -80,11 +82,6 @@ def is_authorized(thread_id:str) -> bool:
 
 #------ BYOK -----------------
 
-_KEY_PATTERNS = {
-    "openai": re.compile(r"^sk-[A-Za-z0-9_-]{20,}$"),
-    "anthropic": re.compile(r"^sk-ant-[A-Za-z0-9_-]{20,}$"),
-    "gemini": re.compile(r"^AIza[A-Za-z0-9_-]{20,}$"),
-}
 
 def validate_byok(provider: str | None, api_key: str | None) -> None:
     if not provider or not api_key:
@@ -92,17 +89,14 @@ def validate_byok(provider: str | None, api_key: str | None) -> None:
             status_code=401,
             detail="Provide either the site password or your own provider + api_key.",
         )
-    if provider not in _KEY_PATTERNS:
-        supported = ", ".join(_KEY_PATTERNS)
+
+    try:
+        llm = check_llm(provider, api_key)
+    except Exception as e:
         raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported provider '{provider}'. Supported: {supported}.",
-        )
-    if not _KEY_PATTERNS[provider].match(api_key):
-        raise HTTPException(
-            status_code=400,
-            detail=f"That doesn't look like a valid {provider} API key.",
-        )
+            status_code=401,
+            detail=f"Failed to validate API key for {provider}: {e}",
+        ) from e
 
 
 def require_access(

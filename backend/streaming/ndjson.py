@@ -1,7 +1,7 @@
 import json
 from agents.graph import graph
 from typing import Any, AsyncGenerator
-
+from langgraph.types import Command
 
 TOOL_ACTION_MAP = {
     "navigate_to_section": "navigate",
@@ -12,6 +12,17 @@ STREAMING_NODES = {"qa_agent", "deep_dive_agent"}
 
 
 def _serialize_tool_output(output : Any) -> dict:
+
+    if isinstance(output, Command):
+        messages = (output.update or {}).get("messages", [])
+    if messages:
+        content = getattr(messages[-1], "content", None)
+        if isinstance(content, str):
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                return {"raw": content}
+
     content = getattr(output,"content",output)
     if isinstance(content, dict):
         return content
@@ -19,6 +30,7 @@ def _serialize_tool_output(output : Any) -> dict:
         return json.loads(content)
     except (TypeError, json.JSONDecodeError):
         return {"raw": content}
+    
 
 async def stream_chat_response(input_state, config):
     try :

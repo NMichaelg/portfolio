@@ -7,5 +7,5 @@ _log_failed_email,
 EMAIL_DB_PATH
 )
 
-from .model import get_llm, DEFAULT_LLM
+from .model import get_llm, DEFAULT_LLM, check_llm
 from .graph import graph
