@@ -13,9 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 from agents import graph
-from schemas import ChatRequest, PasswordRequest
+from schemas import ChatRequest, PasswordRequest, ByokRequest
 from streaming.ndjson import stream_chat_response 
-from auth import check_password, require_access, is_authorized
+from auth import check_password, require_access, is_authorized, validate_byok
 
 app = FastAPI(title = "BackEnd Portfolio")
 logger = logging.getLogger("portfolio_backend")
@@ -84,9 +84,9 @@ async def chat(payload : ChatRequest, request: Request):
         yield json.dumps(
             {
                 "type" : "session",
-                "thread_id" : thread_id + '\n'
+                "thread_id" : thread_id
             }
-        )
+        )+'\n'
 
         async for line in stream_chat_response(input_state,config):
             yield line
@@ -99,4 +99,9 @@ async def auth_password(payload: PasswordRequest, request : Request):
     check_password(request, thread_id, payload.password)
     return {"authorized" : True, "thread_id": thread_id}
 
+@app.post("/api/auth/byok")
+async def auth_byok(payload: ByokRequest, request : Request):
+    thread_id = (payload.thread_id or "").strip() or str(f"chat_thread_{uuid.uuid4()}")
+    validate_byok(payload.provider, payload.api_key)
+    return {"authorized" : True, "thread_id": thread_id}
 

@@ -19,17 +19,16 @@ DEFAULT_LLM = ChatOpenAI(
     api_key=LLM_API_KEY
 )
 
-def get_llm(config):
-    configurable = (config or {}).get("configurable",{})
-    provider = configurable.get("provider")
-    api_key = configurable.get("api_key")
-
-    if not provider or not api_key:
-        return DEFAULT_LLM 
-
+def check_llm(provider, api_key):
     llm_url = _BYOK_PROVIDER[provider]["base_url"]
     model = _BYOK_PROVIDER[provider]["model"]
-
+    llm = ChatOpenAI(
+        model = model,
+        base_url = llm_url,
+        api_key = api_key,
+    )
+    llm.invoke("Hi")
+    
     try : 
         llm = ChatOpenAI(
             model = model,
@@ -37,11 +36,28 @@ def get_llm(config):
             api_key = api_key,
         )
         llm.invoke("Hi")
+    
     except AuthenticationError as e:
         raise ValueError(f"Error 401: Invalid API key{e}") from e
     except APIConnectionError as e:
         raise ConnectionError(f"Could not reach {llm_url}") from e
     except APIError as e:
         raise RuntimeError(f"API error: {e}") from e
+    
+    return llm
+
+
+
+def get_llm(config):
+    configurable = (config or {}).get("configurable",{})
+    provider = configurable.get("provider")
+    api_key = configurable.get("api_key")
+
+    if not provider or not api_key:
+        return DEFAULT_LLM 
+    try : 
+        llm = check_llm(provider, api_key)
+    except Exception as e:
+        raise ValueError(f"Failed to validate API key for {provider}: {e}") from e
 
     return llm

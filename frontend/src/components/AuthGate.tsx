@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 const PROVIDERS = [
   { value: "openai", label: "OpenAI" },
   { value: "anthropic", label: "Anthropic" },
-  { value: "gemini", label: "Google Gemini" },
+  { value: "google", label: "Google Gemini" },
 ];
 
 export default function AuthGate() {
@@ -29,10 +29,14 @@ export default function AuthGate() {
     }
   }
 
-  function handleKeySubmit(e: FormEvent) {
+  async function handleKeySubmit(e: FormEvent) {
     e.preventDefault();
     if (!apiKey.trim()) return;
-    unlockWithKey(provider, apiKey.trim());
+    try {
+      await unlockWithKey(provider, apiKey.trim());
+    } catch {
+      // authError from context already holds the message
+    }
   }
 
   return (

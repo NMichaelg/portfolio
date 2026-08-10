@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useState as useReactState } from "react"; // already have useState imported, just noting
+
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatWidget } from "@/components/ChatProvider";
@@ -28,9 +30,12 @@ const sampleMessages: ChatMessage[] = [
 ];
 
 export default function ChatWidget() {
-  const { open, setOpen, unlocked } = useChatWidget();
+
+  const {open, setOpen, unlocked, messages, sending, pendingInterrupt, sendMessage, resolveInterrupt,} = useChatWidget();
   const [mounted, setMounted] = useState(false);
   const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
+  const [draft, setDraft] = useState("");
+
 
   useEffect(() => {
     if (open) {
@@ -41,6 +46,13 @@ export default function ChatWidget() {
       return () => clearTimeout(timeout);
     }
   }, [open, mounted]);
+
+  function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    if (!draft.trim()) return;
+    sendMessage(draft);
+    setDraft("");
+  }
 
   return (
     <>
@@ -89,18 +101,11 @@ export default function ChatWidget() {
                 <MessageScroller className="flex-1 px-4 py-4">
                   <MessageScrollerViewport>
                     <MessageScrollerContent>
-                      {sampleMessages.map((msg) => (
-                        <MessageScrollerItem
-                          key={msg.id}
-                          messageId={msg.id}
-                          scrollAnchor={msg.role === "user"}
-                        >
+                      {messages.map((msg) => (
+                        <MessageScrollerItem key={msg.id} messageId={msg.id} scrollAnchor={msg.role === "user"}>
                           <Message align={msg.role === "user" ? "end" : "start"}>
                             <MessageContent>
-                              <Bubble
-                                align={msg.role === "user" ? "end" : "start"}
-                                variant={msg.role === "user" ? "default" : "secondary"}
-                              >
+                              <Bubble align={msg.role === "user" ? "end" : "start"} variant={msg.role === "user" ? "default" : "secondary"}>
                                 <BubbleContent>{msg.content}</BubbleContent>
                               </Bubble>
                             </MessageContent>
@@ -111,15 +116,52 @@ export default function ChatWidget() {
                   </MessageScrollerViewport>
                 </MessageScroller>
               </MessageScrollerProvider>
+            {pendingInterrupt && (
+              <div className="px-4 py-3 border-t border-border bg-muted/50">
+                <p className="text-sm mb-2">
+                  {(pendingInterrupt as { message?: string }).message ?? "Send the CV to this email?"}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      resolveInterrupt({
+                        action: "confirm",
+                        recipient_email: (pendingInterrupt as { recipient_email?: string }).recipient_email,
+                      })
+                    }
+                  >
+                    Confirm
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      resolveInterrupt({
+                        action: "cancel",
+                        recipient_email: (pendingInterrupt as { recipient_email?: string }).recipient_email,
+                      })
+                    }
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
 
-              <div className="p-3 border-t border-border">
+              <form onSubmit={handleSend} className="p-3 border-t border-border flex gap-2">
                 <input
                   type="text"
                   placeholder="Type a message..."
-                  disabled
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground placeholder:text-muted-foreground/60 cursor-not-allowed"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  disabled={sending || !!pendingInterrupt}
+                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:text-muted-foreground"
                 />
-              </div>
+                <Button type="submit" size="sm" disabled={sending || !!pendingInterrupt}>
+                  Send
+                </Button>
+              </form>
             </>
           ) : (
             <AuthGate />

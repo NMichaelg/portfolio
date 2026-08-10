@@ -148,6 +148,8 @@ logger = logging.getLogger(__name__)
 resend.api_key = os.environ["RESEND_API_KEY"]
 
 CV_SENDER_EMAIL = os.environ["CV_SENDER_EMAIL"]
+CV_SENDER_EMAIL = os.environ["PERSONAL_EMAIL"]
+
 PERSONAL_EMAIL = os.environ["PERSONAL_EMAIL"]
 CV_PDF_PATH = os.environ["CV_PDF_PATH"]
 
@@ -210,7 +212,7 @@ def _send_email_with_resend(recipient_email: str, recipient_name: str | None) ->
     greeting = f"Dear {recipient_name}," if recipient_name else "Hello,"
 
     resend.Emails.send({
-        "from": f"Ân (Michael) Nguyen <{CV_SENDER_EMAIL}>",
+        "from": f'"Ân Michael Nguyen" <{CV_SENDER_EMAIL}>',
         "to": [recipient_email],
         "subject": "Ân (Michael) Nguyen — Resume / CV",
         "html": (
@@ -290,7 +292,7 @@ def send_cv_email(
         })
 
 
-        last_error: Exception | None = None
+    last_error: Exception | None = None
     for attempt in range(1, MAX_SEND_RETRIES + 1):
         try:
             _send_email_with_resend(recipient_email, recipient_name)

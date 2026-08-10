@@ -4,4 +4,4 @@ from .tool import RepoSummary,RepoDetails
 
 from .graph import ChatState, RouteOutput
 
-from .api import ChatRequest, PasswordRequest
+from .api import ChatRequest, PasswordRequest, ByokRequest
