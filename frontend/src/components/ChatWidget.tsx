@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useState as useReactState } from "react"; // already have useState imported, just noting
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
   MessageScrollerContent,
   MessageScrollerItem,
 } from "@/components/ui/message-scroller";
+import ChatMarkdown from "@/components/ChatMarkdown";
 
 type ChatMessage = {
   id: string;
@@ -29,13 +31,14 @@ const sampleMessages: ChatMessage[] = [
   { id: "3", role: "assistant", content: "Michael built a two-agent LangGraph system for this very site — a router that classifies intent, then hands off to a Q&A agent or a GitHub deep-dive agent." },
 ];
 
+
 export default function ChatWidget() {
 
   const {open, setOpen, unlocked, messages, sending, pendingInterrupt, sendMessage, resolveInterrupt,} = useChatWidget();
   const [mounted, setMounted] = useState(false);
   const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
   const [draft, setDraft] = useState("");
-
+  const isWaitingForReply = sending && (messages.length === 0 || messages[messages.length - 1]?.role === "user");
 
   useEffect(() => {
     if (open) {
@@ -106,12 +109,30 @@ export default function ChatWidget() {
                           <Message align={msg.role === "user" ? "end" : "start"}>
                             <MessageContent>
                               <Bubble align={msg.role === "user" ? "end" : "start"} variant={msg.role === "user" ? "default" : "secondary"}>
-                                <BubbleContent>{msg.content}</BubbleContent>
+                                <BubbleContent>
+                                  <ChatMarkdown content={msg.content} />
+                                </BubbleContent>
                               </Bubble>
                             </MessageContent>
                           </Message>
                         </MessageScrollerItem>
                       ))}
+                      {isWaitingForReply && (
+                        <Message align="start">
+                          <MessageContent>
+                            <Bubble align="start" variant="secondary">
+                              <BubbleContent>
+                                <div className="space-y-2 py-1 w-48">
+                                  <Skeleton className="h-3 w-full bg-muted-foreground/30" />
+                                  <Skeleton className="h-8 w-full bg-muted-foreground/30" />
+
+                                  <Skeleton className="h-3 w-3/5 bg-muted-foreground/30" />
+                                </div>
+                              </BubbleContent>
+                            </Bubble>
+                          </MessageContent>
+                        </Message>
+                      )}
                     </MessageScrollerContent>
                   </MessageScrollerViewport>
                 </MessageScroller>

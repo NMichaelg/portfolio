@@ -2,6 +2,9 @@ import json
 from agents.graph import graph
 from typing import Any, AsyncGenerator
 from langgraph.types import Command
+import logging
+
+logger = logging.getLogger(__name__)
 
 TOOL_ACTION_MAP = {
     "navigate_to_section": "navigate",
@@ -11,22 +14,23 @@ TOOL_ACTION_MAP = {
 STREAMING_NODES = {"qa_agent", "deep_dive_agent"}
 
 
-def _serialize_tool_output(output : Any) -> dict:
+def _serialize_tool_output(output: Any) -> dict:
 
     if isinstance(output, Command):
         messages = (output.update or {}).get("messages", [])
-    if messages:
-        content = getattr(messages[-1], "content", None)
-        if isinstance(content, str):
-            try:
-                return json.loads(content)
-            except json.JSONDecodeError:
-                return {"raw": content}
+        if messages:
+            content = getattr(messages[-1], "content", None)
+            if isinstance(content, str):
+                try:
+                    return json.loads(content)
+                except json.JSONDecodeError:
+                    return {"raw": content}
+        return {"raw": str(output)}
 
-    content = getattr(output,"content",output)
+    content = getattr(output, "content", output)
     if isinstance(content, dict):
         return content
-    try :
+    try:
         return json.loads(content)
     except (TypeError, json.JSONDecodeError):
         return {"raw": content}
@@ -53,6 +57,7 @@ async def stream_chat_response(input_state, config):
                 fields = _serialize_tool_output(event["data"]["output"])
                 yield json.dumps({"type": "action", "action": action, **fields}) + "\n"
     except Exception as exc :
+        logger.exception("Error during graph streaming")  # full traceback → your terminal
         yield json.dumps({"type": "error", "message": str(exc)}) + "\n"
 
     state = await graph.aget_state(config)

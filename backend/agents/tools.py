@@ -159,6 +159,13 @@ RETRY_BACKOFF_BASE_SECONDS = 2
 
 EMAIL_DB_PATH = os.environ["EMAIL_DB_PATH"]
 
+from email.message import EmailMessage
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+
 def _get_db() -> sqlite3.Connection:
     conn = sqlite3.connect(EMAIL_DB_PATH)
     conn.execute(
@@ -204,11 +211,13 @@ def _last_user_text(state: dict) -> str | None:
             return getattr(msg, "content", None) or (msg.get("content") if isinstance(msg, dict) else None)
     return None
 
+def _load_cv_content(path) -> bytes:
+    with open(path, "rb") as f:
+        return f.read()
+    
 def _send_email_with_resend(recipient_email: str, recipient_name: str | None) -> None:
     # Implementation for sending email with Resend
-    with open(CV_PDF_PATH, "rb") as cv_file:
-        cv_content = cv_file.read()
-    
+    cv_content = _load_cv_content(CV_PDF_PATH)
     greeting = f"Dear {recipient_name}," if recipient_name else "Hello,"
 
     resend.Emails.send({
@@ -227,6 +236,81 @@ def _send_email_with_resend(recipient_email: str, recipient_name: str | None) ->
         }],
     })
 
+def _gmail_authenticate():
+    SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
+    creds = None
+
+    cred_path = Path(__file__).parent.parent.parent /'local_info' / "credentials.json"
+    token_path = Path(__file__).parent.parent.parent /'local_info'/ "token.json"
+
+    # Load previously saved login
+    if os.path.exists(token_path):
+        creds = Credentials.from_authorized_user_file(
+            token_path,
+            SCOPES
+        )
+
+    # If we don't have valid credentials, log in
+    if not creds or not creds.valid:
+
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                cred_path,
+                SCOPES
+            )
+
+            creds = flow.run_local_server(port=0)
+
+        # Save credentials for future runs
+        with open(token_path, "w") as token:
+            token.write(creds.to_json())
+
+    return creds
+
+def _send_email_with_gmail(recipient_email: str, recipient_name: str | None) -> None:
+    creds = _gmail_authenticate()
+
+    service = build(
+        "gmail",
+        "v1",
+        credentials=creds
+    )
+    message = EmailMessage()
+
+    cv_content = _load_cv_content(CV_PDF_PATH)
+    greeting = f"Dear {recipient_name}," if recipient_name else "Hello,"
+
+    body = (f"<p>{greeting}</p>" 
+    "<p>Thanks for chatting with my portfolio assistant — my resume is attached.</p>" 
+    "<p>Happy to answer any follow-up questions by email.</p>" 
+    "<p>Best,<br/>Ân (Michael) Nguyen</p>"
+    )
+
+    message["To"] = recipient_email
+    message["Subject"] = "An (Michael) Nguyen — Resume / CV"
+    message.set_content(body, subtype="html")
+
+    message.add_attachment(
+        cv_content,
+        maintype="application",
+        subtype="pdf",
+        filename="An-Michael-Nguyen-CV.pdf",
+    )
+
+    encoded_message = base64.urlsafe_b64encode(
+        message.as_bytes()
+    ).decode()
+
+    result = service.users().messages().send(
+        userId="me",
+        body={
+            "raw": encoded_message
+        }
+    ).execute()
+
 
 @tool(args_schema = SendCvEmailInput)
 def send_cv_email(
@@ -234,7 +318,7 @@ def send_cv_email(
     state: Annotated[dict, InjectedState],
     tool_call_id: Annotated[str, InjectedToolCallId],
     config: RunnableConfig,
-    recipient_name : str | None = None,
+    recipient_name : str,
 
 
     ) -> dict:
@@ -245,6 +329,7 @@ def send_cv_email(
     anything is actually sent — call it as soon as you have a valid email
     address, and let the interrupt handle the "are you sure" step rather
     than trying to confirm in conversation first.
+    
     """
     thread_id = config["configurable"].get("thread_id", "unknown")
     emails_sent = state.get("emails_sent_this_session", 0)
@@ -295,7 +380,7 @@ def send_cv_email(
     last_error: Exception | None = None
     for attempt in range(1, MAX_SEND_RETRIES + 1):
         try:
-            _send_email_with_resend(recipient_email, recipient_name)
+            _send_email_with_gmail(recipient_email, recipient_name)
             result = SendCvEmailResult(
                 status="sent",
                 recipient_email=recipient_email,

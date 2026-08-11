@@ -50,13 +50,14 @@ def classify_intent(state: ChatState, config : RunnableConfig) -> dict:
     task = """
     Classify which agent should handle this user message:
     - "qa": general questions about background, skills, experience, navigating the site, or requesting the CV/resume
-    - "deep_dive": questions about specific GitHub projects/repos, code, or implementation details
+    - "deep_dive": questions about projects, specific GitHub projects/repos, code, or implementation details
     """
     result = classifier.invoke([
         {"role": "system", "content": task},
         {"role": "user", "content": state["messages"][-1].content},
     ])
     #state['route'] = result.route
+    print(f"[classify_intent] route = {result['route']!r}")  # temporary debug line
     return {"route": result['route']}
 
 
