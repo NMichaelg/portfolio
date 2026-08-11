@@ -14,3 +14,4 @@ wheels/
 # Sensitive files
 local_info/*
 db/chroma_store/*
+db/*.sqlite3
