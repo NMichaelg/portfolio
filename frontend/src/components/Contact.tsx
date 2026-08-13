@@ -9,9 +9,9 @@ export default function Contact({ data }: { data: ContactData }) {
         <p className="font-mono text-sm text-secondary mb-2">
           From the matrix equations to the agent chat box — I&apos;m the one in charge.
         </p>
-        <p className="text-muted-foreground text-lg mb-10">Ask my assistant for my CV, or reach me directly.</p>
+        <p className="text-muted-foreground text-lg mb-10">Ask my agent for my Resume, or reach me directly.</p>
 
-        <ChatTriggerButton size="lg" className="mb-10">Ask my AI</ChatTriggerButton>
+        <ChatTriggerButton size="lg" className="mb-10">Contact my agent</ChatTriggerButton>
 
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 font-mono text-sm text-muted-foreground mb-16">
           <a href={`mailto:${data.email}`} className="hover:text-primary transition-colors">{data.email}</a>

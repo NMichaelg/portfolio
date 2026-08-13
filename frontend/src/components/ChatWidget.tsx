@@ -18,6 +18,7 @@ import {
   MessageScrollerItem,
 } from "@/components/ui/message-scroller";
 import ChatMarkdown from "@/components/ChatMarkdown";
+import ChatSuggestions from "@/components/ChatSuggestion";
 
 type ChatMessage = {
   id: string;
@@ -86,7 +87,7 @@ export default function ChatWidget() {
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div>
-              <p className="font-heading font-black text-sm">Ask Michael&apos;s AI</p>
+              <p className="font-heading font-black text-sm">Ask Michael&apos;s agent</p>
               <p className="font-mono text-xs text-muted-foreground">Usually replies instantly</p>
             </div>
             <button
@@ -137,6 +138,7 @@ export default function ChatWidget() {
                   </MessageScrollerViewport>
                 </MessageScroller>
               </MessageScrollerProvider>
+            {messages.length === 0 && !sending && <ChatSuggestions />}
             {pendingInterrupt && (
               <div className="px-4 py-3 border-t border-border bg-muted/50">
                 <p className="text-sm mb-2">
