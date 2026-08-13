@@ -1,5 +1,3 @@
-import siteContent from "../../contents/site.json";
-
 export type HeroData = {
   eyebrow: string;
   heading: string;
@@ -53,6 +51,16 @@ export type SiteContent = {
   contact: ContactData;
 };
 
-export function getSiteContent(): SiteContent {
-  return siteContent as SiteContent;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+export async function getSiteContent(): Promise<SiteContent> {
+  const res = await fetch(`${API_BASE}/api/content`, {
+    next: { revalidate: 3600 }, // re-fetch at most once per hour
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to load site content (${res.status})`);
+  }
+
+  return res.json();
 }

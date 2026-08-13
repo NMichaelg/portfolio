@@ -8,8 +8,8 @@ import Education from "@/components/Education";
 import Contact from "@/components/Contact";
 import ChatWidget from "@/components/ChatWidget";
 
-export default function Home() {
-  const content = getSiteContent();
+export default async function Home() {
+  const content = await getSiteContent();
 
   return (
     <ChatProvider>

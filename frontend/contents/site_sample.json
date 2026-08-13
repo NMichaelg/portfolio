@@ -96,7 +96,10 @@
       "ANOTHER_CERTIFICATION"
     ]
   },
-
+  "languages":{
+    "Second Language": "Full Professional Proficiency",
+    "First Language": "Native / Bilingual"
+  },
   "contact": {
     "email": "YOUR_EMAIL_ADDRESS",
     "linkedin": "https://www.linkedin.com/in/YOUR_USERNAME",
