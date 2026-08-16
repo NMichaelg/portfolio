@@ -1,7 +1,9 @@
+import asyncio
 import os
 import uuid
 import json
 import logging
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -17,7 +19,9 @@ from schemas import ChatRequest, PasswordRequest, ByokRequest
 from streaming.ndjson import stream_chat_response 
 from auth import check_password, require_access, is_authorized, validate_byok
 
-app = FastAPI(title = "BackEnd Portfolio")
+app = FastAPI(
+    title = "Backend Portfolio"
+)
 logger = logging.getLogger("portfolio_backend")
 
 _frontend_origins = os.environ.get("FRONTEND_ORIGINS", "http://localhost:3000")
@@ -105,3 +109,7 @@ async def auth_byok(payload: ByokRequest, request : Request):
     validate_byok(payload.provider, payload.api_key)
     return {"authorized" : True, "thread_id": thread_id}
 
+@app.get("/api/content")
+async def get_content():
+    with open("local_info/content.json", "r") as f:
+        return json.load(f)

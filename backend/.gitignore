@@ -10,8 +10,16 @@ wheels/
 .venv
 .env
 
+#Heavy files
+models/all-MiniLM-L6-v2/*
+
 
 # Sensitive files
-local_info/*
+local_info/content.json
+local_info/credentials.json
+local_info/content.md
+local_info/token.json
+local_info/Profile.pdf
+
 db/chroma_store/*
 db/*.sqlite3

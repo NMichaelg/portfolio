@@ -25,6 +25,8 @@ from schemas.tool import NavigateToSectionInput,SessionId
 from schemas.tool import SendCvEmailInput,SendCvEmailResult,SendCvEmailConfirmation
 from schemas.tool import RepoSummary,RepoDetails
 
+BASE_BACKEND_DIR = Path(__file__).resolve().parent.parent
+
 # RAG on resume Start --------------------------------------------------------
 
 HEADER_TO_SPLIT = [
@@ -33,26 +35,31 @@ HEADER_TO_SPLIT = [
     ("###", "h3")
 ]
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-CHROMA_PERSIST_DIRECTORY = Path(__file__).parent.parent/'db'/'chroma_store'
+CHROMA_PERSIST_DIRECTORY = BASE_BACKEND_DIR /'db'/'chroma_store'
 TOP_K = 3
-RESUME_PATH = Path(__file__).resolve().parent.parent.parent / \
-    "local_info" / "resume-no-password.md"
+RESUME_PATH = BASE_BACKEND_DIR/"local_info"/"content.md"
 
-_embedding: HuggingFaceEmbeddings | None = None
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
+EMBEDDING_MODEL_PATH = Path(__file__).parent.parent / "models" / "all-MiniLM-L6-v2"
+
+
+_embedding = None
 
 
 def get_embedding_model() -> HuggingFaceEmbeddings:
     global _embedding
     if _embedding is None:
         _embedding = HuggingFaceEmbeddings(
-            model_name=EMBEDDING_MODEL_NAME,
-            model_kwargs = {"device":"cpu"}
+            model_name=str(EMBEDDING_MODEL_PATH),
+            model_kwargs={"device": "cpu"},
         )
     return _embedding
 
 
 def read_and_format_resume(resume_path):
-    docs = ''
+    docs = ''        
     with open(resume_path, "r") as f:
         resume_text = f.read()
 
@@ -148,16 +155,49 @@ logger = logging.getLogger(__name__)
 resend.api_key = os.environ["RESEND_API_KEY"]
 
 CV_SENDER_EMAIL = os.environ["CV_SENDER_EMAIL"]
-CV_SENDER_EMAIL = os.environ["PERSONAL_EMAIL"]
 
 PERSONAL_EMAIL = os.environ["PERSONAL_EMAIL"]
-CV_PDF_PATH = os.environ["CV_PDF_PATH"]
+
+CV_PDF_PATH = BASE_BACKEND_DIR /"local_info" / "Profile.pdf"
 
 MAX_EMAILS_PER_SESSION = 5
 MAX_SEND_RETRIES = 5
 RETRY_BACKOFF_BASE_SECONDS = 2
 
 EMAIL_DB_PATH = os.environ["EMAIL_DB_PATH"]
+
+EMAIL_FORMAT = """
+<div style="margin:0; padding:40px 20px; background:#f5f5f3; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; color:#242424;">
+  <div style="max-width:560px; margin:0 auto; background:#ffffff; border:1px solid #e8e8e5; border-radius:16px; overflow:hidden;">
+
+<div style="height:5px; background:#111111;"></div>
+
+<div style="padding:40px;">
+  <p style="margin:0 0 28px; font-size:16px; line-height:1.6;">
+    {greeting}
+  </p>
+
+  <p style="margin:0 0 18px; font-size:18px; line-height:1.6; font-weight:600;">
+    Thanks for chatting with my agent
+  </p>
+
+  <p style="margin:0 0 24px; font-size:15px; line-height:1.8; color:#555;">
+    Here is my resume for your reference
+</p>
+
+  <p style="margin:0 0 32px; font-size:15px; line-height:1.8; color:#555;">
+    Feel free to ask any follow-up questions in this email
+  </p>
+  <p style="margin:0; font-size:15px; line-height:1.7;">
+    Best,<br>
+    <strong style="font-size:16px;">Ân (Michael)</strong>
+  </p>
+</div>
+
+  </div>
+</div>
+
+"""
 
 from email.message import EmailMessage
 
@@ -240,8 +280,8 @@ def _gmail_authenticate():
     SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
     creds = None
 
-    cred_path = Path(__file__).parent.parent.parent /'local_info' / "credentials.json"
-    token_path = Path(__file__).parent.parent.parent /'local_info'/ "token.json"
+    cred_path = BASE_BACKEND_DIR /'local_info' / "credentials.json"
+    token_path = BASE_BACKEND_DIR /'local_info'/ "token.json"
 
     # Load previously saved login
     if os.path.exists(token_path):
@@ -283,11 +323,9 @@ def _send_email_with_gmail(recipient_email: str, recipient_name: str | None) -> 
     cv_content = _load_cv_content(CV_PDF_PATH)
     greeting = f"Dear {recipient_name}," if recipient_name else "Hello,"
 
-    body = (f"<p>{greeting}</p>" 
-    "<p>Thanks for chatting with my portfolio assistant — my resume is attached.</p>" 
-    "<p>Happy to answer any follow-up questions by email.</p>" 
-    "<p>Best,<br/>Ân (Michael) Nguyen</p>"
-    )
+    
+
+    body = EMAIL_FORMAT.format(greeting=greeting)
 
     message["To"] = recipient_email
     message["Subject"] = "An (Michael) Nguyen — Resume / CV"
