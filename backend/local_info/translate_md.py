@@ -157,3 +157,6 @@ def generate_markdown_file():
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(markdown, encoding="utf-8")
     print(f"Generated {output_path} from {input_path}")
+
+if __name__ == "__main__":
+    generate_markdown_file()

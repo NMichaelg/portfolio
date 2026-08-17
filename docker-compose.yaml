@@ -1,0 +1,26 @@
+services:
+  backend_portfolio:
+    build: ./backend
+    ports: 
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "
+      if [ ! -f models/all-MiniLM-L6-v2/config.json ]; then
+        uv run --frozen --no-dev models/download_embedding_model.py;
+      fi &&
+      if [ ! -f local_info/content.md ]; then
+        uv run --frozen --no-dev local_info/translate_md.py;
+      fi &&
+      uv run --frozen --no-dev uvicorn main:app --host 0.0.0.0 --port 8000
+      "
+    environment:
+      FRONTEND_ORIGINS: "http://192.168.1.56:3000"
+  frontend_portfolio:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      #INTERNAL_API_URL: "http://backend_portfolio:8000"
+      NEXT_PUBLIC_API_URL: "http://192.168.1.56:8000"

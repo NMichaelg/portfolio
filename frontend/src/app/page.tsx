@@ -8,6 +8,8 @@ import Education from "@/components/Education";
 import Contact from "@/components/Contact";
 import ChatWidget from "@/components/ChatWidget";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const content = await getSiteContent();
 
