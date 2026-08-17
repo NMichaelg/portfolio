@@ -24,7 +24,8 @@ app = FastAPI(
 )
 logger = logging.getLogger("portfolio_backend")
 
-_frontend_origins = os.environ.get("FRONTEND_ORIGINS", "http://localhost:3000")
+_frontend_origins = os.environ.get("FRONTEND_ORIGINS")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _frontend_origins.split(",") if o.strip()],
