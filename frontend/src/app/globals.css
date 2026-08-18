@@ -23,6 +23,12 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-role-1: var(--role-1);
+  --color-role-2: var(--role-2);
+  --color-role-3: var(--role-3);
+  --color-role-4: var(--role-4);
+  --color-role-5: var(--role-5);
+  --color-role-6: var(--role-6);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -72,6 +78,12 @@
   --chart-3: oklch(0.609 0.126 221.723);
   --chart-4: oklch(0.52 0.105 223.128);
   --chart-5: oklch(0.45 0.085 224.283);
+  --role-1: oklch(0.72 0.19 300); /* violet */
+  --role-2: oklch(0.72 0.19 15);  /* rose */
+  --role-3: oklch(0.75 0.17 120); /* green */
+  --role-4: oklch(0.72 0.15 230); /* sky blue */
+  --role-5: oklch(0.75 0.15 190); /* cyan */
+  --role-6: oklch(0.72 0.19 340); /* pink */
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);

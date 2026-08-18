@@ -18,7 +18,8 @@ export type TechGroup = {
 
 export type Project = {
   name: string;
-  description: string;
+  role: string[];
+  description: string[];
   tags: string[];
   url: string;
 };

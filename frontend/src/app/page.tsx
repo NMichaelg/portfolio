@@ -7,6 +7,7 @@ import Projects from "@/components/Projects";
 import Education from "@/components/Education";
 import Contact from "@/components/Contact";
 import ChatWidget from "@/components/ChatWidget";
+import Nav from "@/components/Nav";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function Home() {
 
   return (
     <ChatProvider>
+      <Nav />
       <main>
         <Hero data={content.hero} />
         <Experience roles={content.experience} />
