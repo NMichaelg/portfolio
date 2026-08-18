@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useChatWidget } from "@/components/ChatProvider";
 
 const SUGGESTIONS = [
-  { label: "Ask about a project", message: "Tell me about one of your projects." },
-  { label: "See your tech stack", message: "Take me to the tech stack section." },
+  { label: "Ask about some projects on github", message: "Tell me about some of your projects on github" },
+  { label: "See experience session", message: "Take me to the experience section." },
   { label: "Send me the resume", message: "Can you email me the resume?" },
 ];
 
