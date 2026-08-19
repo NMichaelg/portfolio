@@ -35,6 +35,7 @@ export type EducationData = {
   degrees: Degree[];
   honors: string[];
   certifications: string[];
+  communityPrograms: string[];
 };
 
 export type ContactData = {

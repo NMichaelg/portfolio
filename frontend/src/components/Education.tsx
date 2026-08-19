@@ -7,6 +7,7 @@ export default function Education({ data }: { data: EducationData }) {
       <div className="max-w-3xl mx-auto">
         <p className="font-mono text-sm text-primary tracking-wide mb-3">EDUCATION</p>
         <h2 className="font-heading font-black text-3xl md:text-4xl mb-12">Where I studied.</h2>
+
         <div className="space-y-10 mb-12">
           {data.degrees.map((degree) => (
             <div key={degree.title} className="border-l-2 border-secondary pl-6 relative">
@@ -20,6 +21,7 @@ export default function Education({ data }: { data: EducationData }) {
             </div>
           ))}
         </div>
+
         <div className="grid sm:grid-cols-2 gap-8">
           <div>
             <h3 className="font-mono text-sm text-muted-foreground mb-3">Honors & Awards</h3>
@@ -31,6 +33,12 @@ export default function Education({ data }: { data: EducationData }) {
             <h3 className="font-mono text-sm text-muted-foreground mb-3">Certifications</h3>
             <div className="flex flex-wrap gap-2">
               {data.certifications.map((c) => <Badge key={c} variant="secondary">{c}</Badge>)}
+            </div>
+          </div>
+          <div>
+            <h3 className="font-mono text-sm text-muted-foreground mb-3">Community / Programs</h3>
+            <div className="flex flex-wrap gap-2">
+              {data.communityPrograms.map((c) => <Badge key={c} variant="secondary">{c}</Badge>)}
             </div>
           </div>
         </div>

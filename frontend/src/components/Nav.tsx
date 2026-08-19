@@ -13,6 +13,8 @@ const LINKS = [
   { id: "contact", label: "Contact" },
 ];
 
+const OBSERVED_IDS = ["hero", ...LINKS.map((l) => l.id)];
+
 function scrollToId(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 }
@@ -23,7 +25,7 @@ export default function Nav() {
   const visibleRatios = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
-    const sections = LINKS.map((l) => document.getElementById(l.id)).filter(
+    const sections = OBSERVED_IDS.map((id) => document.getElementById(id)).filter(
       (el): el is HTMLElement => el !== null
     );
 
@@ -32,7 +34,6 @@ export default function Nav() {
         for (const entry of entries) {
           visibleRatios.current.set(entry.target.id, entry.intersectionRatio);
         }
-        // Pick whichever observed section currently has the greatest visible ratio
         let bestId: string | null = null;
         let bestRatio = 0;
         for (const [id, ratio] of visibleRatios.current) {
@@ -45,7 +46,7 @@ export default function Nav() {
       },
       {
         threshold: [0, 0.25, 0.5, 0.75, 1],
-        rootMargin: "-80px 0px -40% 0px", // account for fixed nav height, bias toward upper half of viewport
+        rootMargin: "-80px 0px -40% 0px",
       }
     );
 
@@ -58,7 +59,10 @@ export default function Nav() {
       <div className="max-w-6xl mx-auto px-6 md:px-16 h-16 flex items-center justify-between">
         <button
           onClick={() => scrollToId("hero")}
-          className="font-mono text-sm text-primary tracking-wide"
+          className={cn(
+            "font-mono text-sm tracking-wide transition-colors",
+            activeId === "hero" ? "text-primary" : "text-muted-foreground"
+          )}
         >
           Home
         </button>
