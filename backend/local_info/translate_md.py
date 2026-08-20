@@ -59,20 +59,27 @@ def _render_experience(experience: list) -> str:
 def _render_projects(projects: list) -> str:
     if not projects:
         return ""
+
     lines = ["## Projects", ""]
+
     for project in projects:
-        name = project.get("name", "")
-        description = project.get("description", "")
-        tags = ", ".join(project.get("tags", []))
-        url = project.get("url", "")
-        lines.append(f"### {name}")
-        if description:
-            lines.append(description)
-        if tags:
-            lines.append(f"* **Technologies:** {tags}")
-        if url:
-            lines.append(f"* **URL:** {url}")
+        lines.append(f"### {project.get('name', '')}")
+
+        roles = ", ".join(project.get("role", []))
+        if roles:
+            lines.append(f"**Role:** {roles}")
+
+        for description in project.get("description", []):
+            lines.append(f"- {description}")
+
+        if project.get("tags"):
+            lines.append(f"**Tech:** {', '.join(project['tags'])}")
+
+        if project.get("url"):
+            lines.append(f"[View Project]({project['url']})")
+
         lines.append("")
+
     return "\n".join(lines).rstrip()
 
 
